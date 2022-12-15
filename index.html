@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flap Ball</title>
+    <link rel="stylesheet" href="./index.css">
+    <script src="../../jquery-3.6.1.js"></script>
+
+</head>
+<body>
+    <button class="play-pause">Pause</button>
+    <div class="map">
+        <span class="points"></span>
+        <div class="ball"></div>
+    </div>
+
+    <script>
+        
+        const $map = $('.map')
+        const $ball = $('.ball')
+        const $points = $('.points')
+        const $btn = $('.play-pause')
+
+
+        //play or pause
+        let creatingObstaclesVar
+
+        $btn.on('click',(e)=>{
+            if(e.target.innerHTML === "Pause"){
+                console.log(e.target)
+                clearInterval(creatingObstaclesVar)
+                e.target.innerHTML = 'Play'
+            } else {
+                e.target.innerHTML = 'Pause'
+                creatingObstacles()
+            }
+        })
+        //points
+        
+        let points = localStorage.getItem('FlapBallPoints') || 0
+        $points.text(points)
+        let pointing = setInterval(()=>{
+            points++
+            showPoints()
+        },1000)
+
+        function showPoints(){
+            $points.text(points)
+        }
+
+        //$ball jump
+        let ballHeight = $ball[0].clientHeight
+        let mapHeight = $map[0].clientHeight
+        let maxHeight = mapHeight - ballHeight
+        let floorDistance = $map[0].offsetHeight
+        let ableToJumpAgain = true
+        let jumpTimer
+        let returningTimer
+
+        $(document).keypress((e) => {
+            console.log('abletojump: ' + ableToJumpAgain)
+            if(e.keyCode === 32 && ableToJumpAgain == true){
+                clearTimeout(jumpTimer)
+                clearTimeout(returningTimer)
+                jumping()
+                jumpReturn()
+                console.log('abletojump: ' + ableToJumpAgain)
+            }
+        })
+
+        function jumping (){
+            height = floorDistance - $ball[0].offsetTop - ballHeight + 100
+            
+            if(height < maxHeight){      
+                document.documentElement.style.setProperty('--cubic-bezier', 'cubic-bezier(.08,.98,.9,1.07)')
+                $ball[0].style.bottom = `${height}px`
+            } else {
+                ableToJumpAgain = false
+                setTimeout(()=>{
+                    ableToJumpAgain = true
+                },500)
+            }
+        }
+
+        let jumpReturn = () => {
+            jumpTimer = setTimeout(()=>{
+                document.documentElement.style.setProperty('--cubic-bezier', 'cubic-bezier(.99,.01,.99,.97)')
+                $ball[0].style.bottom = '0'
+            }, 700)
+        }
+
+        //obstacles
+        let $obstacles = document.getElementsByClassName('obstacle')
+        let creationTimer = 3000
+        const obstaclesHeight = mapHeight * 0.4
+        const obstaclesWidth = ballHeight
+        console.log(obstaclesWidth)
+        const mapWidth = $map[0].clientWidth
+        let nextObstacleType = []
+        const obstacleHeightType_0 = [mapHeight - obstaclesHeight]
+        const obstacleHeightType_1 = [obstaclesHeight]
+        const obstacleHeightType_2 = [(mapHeight-obstaclesHeight),obstaclesHeight]
+
+
+        console.log(mapWidth);
+
+        function creatingObstacles(){
+            creatingObstaclesVar = setInterval(()=>{
+                let type = Math.round(Math.random() * 2)
+                
+                switch(type){
+                    case 0:
+                        setObstacleType(createObstacleByType(1),'bottom')
+                        nextObstacleType.append.push(0)
+                        break;
+                    case 1:
+                        setObstacleType(createObstacleByType(1),'top')
+                        nextObstacleType.append.push(1)
+                        break;
+                    case 2:
+                        setObstacleType(createObstacleByType(2),'both')
+                        nextObstacleType.append.push(2)
+                    break;
+                    default:
+                        console.error('wrong type')
+                }
+    
+            }, creationTimer)
+        }
+        creatingObstacles()
+
+        function createObstacleByType(qtd){
+            const newObstacle_0 = document.createElement('div')
+            newObstacle_0.classList.add('obstacle')
+            if(qtd == 2){
+                const newObstacle_1 = document.createElement('div')
+                newObstacle_1.classList.add('obstacle')
+                return [newObstacle_0,newObstacle_1]
+            } else {
+                return [newObstacle_0]
+            }
+        }
+
+        function setObstacleType(obstacle,where){
+            const height = obstacle.length == 1 ? obstaclesHeight : obstaclesHeight / 1.7
+
+            obstacle[0].setAttribute('style', `
+                height: ${height}px;
+                width: ${obstaclesWidth}px;
+                background-color: red;
+                position: absolute;
+                left: ${mapWidth}px;
+                ${where == 'top' ? 'top: 0;' : 'bottom: 0;'}
+            `)
+            $map.append(obstacle[0])
+ 
+            
+            if (obstacle.length == 2){
+                obstacle[1].setAttribute('style', `
+                height: ${height}px;
+                width: ${obstaclesWidth}px;
+                background-color: red;
+                position: absolute;
+                left: ${mapWidth}px;
+                top: 0;
+                `)
+                $map.append(obstacle[1])
+                setTimeout(()=>{
+                    obstacle[0].style.left = -mapWidth + 'px'
+                    obstacle[1].style.left = -mapWidth + 'px'
+                },50)
+            } else{
+                setTimeout(()=>{
+                    obstacle[0].style.left = -mapWidth + 'px'
+                },50)
+            }
+        }
+
+        function removeObstacles(){
+            setInterval(()=>{
+                if($obstacles.length > 0 && $obstacles[0].offsetLeft === -mapWidth){
+                    $obstacles[0].remove()
+                    nextObstacleType.shift()
+                }
+            },300)
+        }
+        removeObstacles()
+
+        //hit
+        function checkingHit(){
+            setInterval(()=>{
+                let 
+
+
+                if(($ball[0].offsetLeft + 60) >= $obstacles[0].offsetLeft && $ball[0].offsetLeft <= $obstacles[0].offsetLeft){
+                    
+                    switch (nextObstacleType[0]){
+                        case 0:
+                            if(($ball[0].offsetTop + 60) > obstacleHeightType_0){
+                                checkBallPixels()
+                            }
+                            break;
+                        case 1:
+                            if($ball[0].offsetTop + 60 < obstacleHeightType_1){
+                                checkBallPixels()
+                            }
+                            break;
+                        case 2:
+                            if($ball[0].offsetTop > obstacleHeightType_2[0] && $ball[0].offsetTop + 60 < obstacleHeightType_2[1]){
+                                checkBallPixels()
+                            }
+                            break;
+                    }
+                    checkNextObstaclePixels()
+                }
+            }, 50)
+            clearInterval(pointing)
+            localStorage.setItem('FlapBallPoints',points)
+            clearInterval(creatingObstacles) 
+        }
+
+
+
+
+        //1 - checar se a altura do obstacle é maior que a minima altura da bola
+            //não return
+
+            //sim - se o menor left do obstacle for menor que o maior left
+
+
+
+    </script>
+    
+</body>
+</html>
